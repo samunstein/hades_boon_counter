@@ -4,3 +4,6 @@ Include
 Lib
 Scripts
 pyvenv.cfg
+dist
+build
+main.spec
