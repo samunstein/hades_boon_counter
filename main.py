@@ -12,6 +12,8 @@ from tkinter import Tk, Label, Frame, BOTH, LEFT
 
 from luabins import *
 
+LIST_HAMMER = False
+
 def read_file(filename):
     with open(filename, "rb") as f:
         signature = f.read(4).decode("UTF-8")
@@ -71,7 +73,7 @@ def read_traits(data):
         trait_d = trait[1]
         if "God" in trait_d:
             trait_list.append(Trait([trait_d["God"]], trait_d["Name"], trait_d["Rarity"]))
-        elif "Frame" in trait_d and trait_d["Frame"] == "Hammer":
+        elif LIST_HAMMER and "Frame" in trait_d and trait_d["Frame"] == "Hammer":
             trait_list.append(Trait(["Hammer"], trait_d["Name"], "Common"))
         elif "Frame" in trait_d and trait_d["Frame"] == "Duo":
             gods_re = re.match("([A-Za-z]+)_([A-Za-z]+)_[0-9]+", trait_d["Icon"])
