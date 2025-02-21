@@ -139,13 +139,17 @@ def main():
 
         filedata = read_file(file)
 
+        keepsakes = read_god_keepsakes(filedata)
         traits = read_traits(filedata)
+
         god_tally = defaultdict(lambda: 0)
+        for k in keepsakes:
+            god_tally[k] = 0
         for trait in traits:
             for god in trait.gods:
                 god_tally[god] += 1
 
-        keepsakes = read_god_keepsakes(filedata)
+
 
         for w in boonframe.winfo_children():
             w.destroy()
