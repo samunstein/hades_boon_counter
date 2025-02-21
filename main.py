@@ -52,7 +52,7 @@ class Trait:
     rarity: str
 
 def read_god_keepsakes(data):
-    blocked = data[0]["CurrentRun"]["BlockedKeepsakes"]
+    blocked = data[0]["CurrentRun"]["BlockedKeepsakes"] if "BlockedKeepsakes" in data[0]["CurrentRun"] else dict()
     taken = []
     for b in blocked.values():
         match = re.match("Force([A-Za-z]+)BoonTrait", b)
