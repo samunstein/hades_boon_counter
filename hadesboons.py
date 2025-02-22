@@ -156,7 +156,10 @@ def main():
 
         for god in sorted(god_tally):
             keepsake = " + keepsake" if god in keepsakes else ""
-            l = Label(master=boonframe, text=f"{god}: {god_tally[god]} boons{keepsake}")
+            l = Label(
+                master=boonframe,
+                text=f"{god}: {god_tally[god]} boon{"s" if god_tally[god] != 1 else ""}{keepsake}"
+            )
             l.config(padx=15, pady=5, anchor="w", font=("Arial", 20))
             l.pack(fill=BOTH)
 
