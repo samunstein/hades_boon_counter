@@ -6,4 +6,5 @@ Scripts
 pyvenv.cfg
 dist
 build
-main.spec
+hadesboons.dist
+*.spec
