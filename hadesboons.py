@@ -11,6 +11,7 @@ from lz4 import block
 
 LIST_HAMMER = False
 
+
 def read_file(filename):
     with open(filename, "rb") as fil:
         stream = BytesIO(fil.read())
@@ -51,6 +52,7 @@ class Trait:
     name: str
     rarity: str
 
+
 def read_god_keepsakes(data):
     blocked = data[0]["CurrentRun"]["BlockedKeepsakes"] if "BlockedKeepsakes" in data[0]["CurrentRun"] else dict()
     taken = []
@@ -88,6 +90,7 @@ def read_traits(data):
                 trait_list.append(Trait(list(god), trait_d["Name"], trait_d["Rarity"]))
     return trait_list
 
+
 def find_save_folder():
     home = os.path.expanduser("~")
     try:
@@ -103,6 +106,7 @@ def find_save_folder():
         quit()
     return savefilesdir
 
+
 def find_save_file(savefilesdir):
     saves = os.listdir(savefilesdir)
     relevant = [s for s in saves if re.match("^[A-Za-z0-9]+_Temp.sav$", s) is not None]
@@ -112,6 +116,7 @@ def find_save_file(savefilesdir):
     file, time = list(sorted(with_times, key=lambda a: a[1], reverse=True))[0]
 
     return f"{savefilesdir}/{file}", time
+
 
 def main():
     directory = find_save_folder()
@@ -149,10 +154,11 @@ def main():
             for god in trait.gods:
                 god_tally[god] += 1
 
-
-
         for w in boonframe.winfo_children():
             w.destroy()
+
+        totalboons = 0
+        totalkeepsakes = len(keepsakes)
 
         for god in sorted(god_tally):
             keepsake = " + keepsake" if god in keepsakes else ""
@@ -162,6 +168,15 @@ def main():
             )
             l.config(padx=15, pady=5, anchor="w", font=("Arial", 20))
             l.pack(fill=BOTH)
+
+            totalboons += god_tally[god]
+
+        l = Label(
+            master=boonframe,
+            text=f"Total: {totalboons} boon{"s" if totalboons != 1 else ""}, {totalkeepsakes} keepsake{"s" if totalkeepsakes != 1 else ""}"
+        )
+        l.config(padx=15, pady=5, anchor="w", font=("Arial", 24))
+        l.pack(fill=BOTH)
 
         root.after(2000, update)
         return
@@ -177,7 +192,7 @@ def main():
     modifiedlabel.grid(row=0, column=1)
 
     boonframe = Frame()
-    boonframe.config(padx = 10, pady = 10)
+    boonframe.config(padx=10, pady=10)
 
     headframe.pack()
     boonframe.pack()
@@ -188,6 +203,7 @@ def main():
     root.after(100, update)
 
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
