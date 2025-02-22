@@ -1,49 +1,49 @@
 import dataclasses
-import re
 import os
-from datetime import datetime
-
+import re
 from collections import defaultdict
-from tkinter.constants import RIGHT
-
-from lz4 import block
+from datetime import datetime
 from io import BytesIO
-from tkinter import Tk, Label, Frame, BOTH, LEFT
+from tkinter import Tk, Label, Frame, BOTH
 
 from luabins import *
+from lz4 import block
 
 LIST_HAMMER = False
 
 def read_file(filename):
-    with open(filename, "rb") as f:
-        signature = f.read(4).decode("UTF-8")
-        checksum = f.read(4)
-        version = int.from_bytes(f.read(4), "little")
-        timestamp = int.from_bytes(f.read(8), "little")
-        location = luabins._read_string(f)
-        runs = luabins._read_int(f)
-        meta_points = luabins._read_int(f)
-        shrine_points = luabins._read_int(f)
-        godmode = luabins._read_short_short_int(f)
-        hellmode = luabins._read_short_short_int(f)
-        luakeys_len = luabins._read_int(f)
-        luakeys = []
-        for _ in range(luakeys_len):
-            luakeys.append(luabins._read_string(f))
-        current_map = luabins._read_string(f)
-        startingmap = luabins._read_string(f)
+    with open(filename, "rb") as fil:
+        stream = BytesIO(fil.read())
+    stream.seek(0)
+    signature = stream.read(4).decode("UTF-8")
+    checksum = stream.read(4)
+    version = int.from_bytes(stream.read(4), "little")
+    timestamp = int.from_bytes(stream.read(8), "little")
+    location = luabins._read_string(stream)
+    runs = luabins._read_int(stream)
+    meta_points = luabins._read_int(stream)
+    shrine_points = luabins._read_int(stream)
+    godmode = luabins._read_short_short_int(stream)
+    hellmode = luabins._read_short_short_int(stream)
+    luakeys_len = luabins._read_int(stream)
+    luakeys = []
+    for _ in range(luakeys_len):
+        luakeys.append(luabins._read_string(stream))
+    current_map = luabins._read_string(stream)
+    startingmap = luabins._read_string(stream)
 
-        binlength = luabins._read_int(f)
-        compressed = BytesIO()
+    binlength = luabins._read_int(stream)
+    compressed = BytesIO()
 
-        for _ in range(binlength):
-          compressed.write(luabins._read_short_short_int(f).to_bytes(1))
-        compressed.seek(0)
+    for _ in range(binlength):
+        compressed.write(luabins._read_short_short_int(stream).to_bytes(1))
+    compressed.seek(0)
 
-        decompressed = block.decompress(compressed.read(), binlength * 10)
-        dec_bytes = BytesIO(decompressed)
-        data = luabins.decode_luabins(dec_bytes)
-        return data
+    decompressed = block.decompress(compressed.read(), binlength * 10)
+    dec_bytes = BytesIO(decompressed)
+    data = luabins.decode_luabins(dec_bytes)
+    return data
+
 
 @dataclasses.dataclass(frozen=True, repr=True)
 class Trait:
