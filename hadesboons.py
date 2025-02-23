@@ -169,13 +169,14 @@ def main():
             l.config(padx=15, pady=5, anchor="w", font=("Arial", 20))
             l.pack(fill=BOTH)
 
-            totalboons += god_tally[god]
+            if god != "Chaos":
+                totalboons += god_tally[god]
 
         l = Label(
             master=boonframe,
-            text=f"Total: {totalboons} boon{"s" if totalboons != 1 else ""}, {totalkeepsakes} keepsake{"s" if totalkeepsakes != 1 else ""}"
+            text=f"Total: {totalboons} nonchaos boon{"s" if totalboons != 1 else ""}, {totalkeepsakes} keepsake{"s" if totalkeepsakes != 1 else ""}"
         )
-        l.config(padx=15, pady=5, anchor="w", font=("Arial", 24))
+        l.config(padx=15, pady=15, anchor="w", font=("Arial", 22))
         l.pack(fill=BOTH)
 
         root.after(2000, update)
