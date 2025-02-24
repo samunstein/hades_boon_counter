@@ -5,6 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from io import BytesIO
 from tkinter import Tk, Label, Frame, BOTH
+from idlelib.tooltip import Hovertip
 
 from luabins import *
 from lz4 import block
@@ -46,11 +47,44 @@ def read_file(filename):
     return data
 
 
+
 @dataclasses.dataclass(frozen=True, repr=True)
 class Trait:
     gods: list[str]
     name: str
     rarity: str
+
+@dataclasses.dataclass(repr=True)
+class Booncount:
+    god: str
+
+    normal: int
+    duo: int
+    legendary: int
+
+    boons: list[str]
+
+    def to_str(self):
+        n = [f"{self.normal}N"] if self.normal else []
+        l = [f"{self.legendary}L"] if self.legendary else []
+        d = [f"{self.duo}D"] if self.duo else []
+        return "\n".join([" ".join(n + d + l)] + self.boons)
+
+    def sum(self):
+        return self.normal + self.duo + 2 * self.legendary
+
+    def add(self, trait: Trait):
+        short = ""
+        if trait.rarity == "Legendary":
+            self.legendary += 1
+            short = "L"
+        elif trait.rarity == "Duo":
+            self.duo += 1
+            short = "D"
+        else:
+            self.normal += 1
+            short = "N"
+        self.boons.append(trait.name + " - " + short)
 
 
 def read_god_keepsakes(data):
@@ -68,26 +102,27 @@ def read_god_keepsakes(data):
     return taken
 
 
-def read_traits(data):
+def read_traits(data, lang):
     traitdict = data[0]["CurrentRun"]["Hero"]["TraitDictionary"]
     trait_list = []
     for trait in traitdict.values():
         trait_d = trait[1]
+        name = lang[trait_d["Name"]] if trait_d["Name"] in lang else trait_d["Name"]
         if "God" in trait_d:
-            trait_list.append(Trait([trait_d["God"]], trait_d["Name"], trait_d["Rarity"]))
+            trait_list.append(Trait([trait_d["God"]], name, trait_d["Rarity"]))
         elif LIST_HAMMER and "Frame" in trait_d and trait_d["Frame"] == "Hammer":
-            trait_list.append(Trait(["Hammer"], trait_d["Name"], "Common"))
+            trait_list.append(Trait(["Hammer"], name, "Common"))
         elif "Frame" in trait_d and trait_d["Frame"] == "Duo":
             gods_re = re.match("([A-Za-z]+)_([A-Za-z]+)_[0-9]+", trait_d["Icon"])
             gods = gods_re.groups()
-            trait_list.append(Trait(list(gods), trait_d["Name"], "Duo"))
+            trait_list.append(Trait(list(gods), name, "Duo"))
         elif "Icon" in trait_d and "Chaos_Blessing" in trait_d["Icon"]:
-            trait_list.append(Trait(["Chaos"], trait_d["Name"], trait_d["Rarity"]))
+            trait_list.append(Trait(["Chaos"], name, trait_d["Rarity"]))
         elif "Icon" in trait_d and "Rarity" in trait_d:
             god_re = re.match("Boon_([A-Za-z]+)_[0-9]+", trait_d["Icon"])
             if god_re is not None:
                 god = god_re.groups()
-                trait_list.append(Trait(list(god), trait_d["Name"], trait_d["Rarity"]))
+                trait_list.append(Trait(list(god), name, trait_d["Rarity"]))
     return trait_list
 
 
@@ -125,6 +160,8 @@ def main():
         input("Save file with run data doesn't exist probably")
         quit()
 
+    langdict = read_langfile()
+
     def update():
         nonlocal current_time
 
@@ -145,14 +182,17 @@ def main():
         filedata = read_file(file)
 
         keepsakes = read_god_keepsakes(filedata)
-        traits = read_traits(filedata)
+        traits = read_traits(filedata, langdict)
 
-        god_tally = defaultdict(lambda: 0)
+        god_tally = {}
+
         for k in keepsakes:
-            god_tally[k] = 0
+            god_tally[k] = Booncount(k, 0, 0, 0, [])
         for trait in traits:
             for god in trait.gods:
-                god_tally[god] += 1
+                if god not in god_tally:
+                    god_tally[god] = Booncount(god, 0, 0, 0, [])
+                god_tally[god].add(trait)
 
         for w in boonframe.winfo_children():
             w.destroy()
@@ -164,13 +204,15 @@ def main():
             keepsake = " + keepsake" if god in keepsakes else ""
             l = Label(
                 master=boonframe,
-                text=f"{god}: {god_tally[god]} boon{"s" if god_tally[god] != 1 else ""}{keepsake}"
+                text=f"{god}: {god_tally[god].sum()} boon{"s" if god_tally[god] != 1 else ""}{keepsake}"
             )
             l.config(padx=15, pady=5, anchor="w", font=("Arial", 20))
             l.pack(fill=BOTH)
 
+            Hovertip(l, god_tally[god].to_str(), hover_delay=0)
+
             if god != "Chaos":
-                totalboons += god_tally[god]
+                totalboons += god_tally[god].sum()
 
         l = Label(
             master=boonframe,
@@ -183,7 +225,7 @@ def main():
         return
 
     root = Tk()
-    root.title = "Boon calculator"
+    root.title("Booncalculator")
 
     headframe = Frame()
     headframe.config(padx=10, pady=10)
@@ -204,6 +246,36 @@ def main():
     root.after(100, update)
 
     root.mainloop()
+
+def read_langfile():
+    words = {}
+
+    programfiles = os.environ["ProgramFiles(x86)"] if "ProgramFiles(x86)" in os.environ else "C:/Program Files (x86)"
+    maybe_file = f"{programfiles}/Steam/steamapps/common/Hades/Content/Game/Text/en/HelpText.en.sjson"
+
+    path = ""
+    if os.path.exists(maybe_file):
+        path = maybe_file
+    else:
+        hadespath = input("Cannot find hades game files. Please paste hades game files 'Content' folder (usually under Steam - steamapps - common - Hades): ")
+        path = f"{hadespath}/Game/Text/en/HelpText.en.sjson"
+
+    if not os.path.exists(path):
+        print("Cannot find language file")
+        return words
+
+    with open(path, "r", encoding="UTF-8") as f:
+        t = f.read()
+        # Absolute madness, but should work for what it is used
+        sections = t.split("{")
+
+        for section in sections:
+            idtext = re.search("Id = \"([A-Za-z0-9_]+)\"", section)
+            valtext = re.search("DisplayName = \"(.+)\"", section)
+            if idtext and valtext:
+                words[idtext.group(1)] = valtext.group(1)
+    return words
+
 
 
 if __name__ == "__main__":
