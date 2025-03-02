@@ -109,7 +109,7 @@ def read_traits(data, lang):
         trait_d = trait[1]
         name = lang[trait_d["Name"]] if trait_d["Name"] in lang else trait_d["Name"]
         if "God" in trait_d:
-            trait_list.append(Trait([trait_d["God"]], name, trait_d["Rarity"]))
+            trait_list.append(Trait([trait_d["God"]], name, trait_d["Rarity"] if "Rarity" in trait_d else "Common"))
         elif LIST_HAMMER and "Frame" in trait_d and trait_d["Frame"] == "Hammer":
             trait_list.append(Trait(["Hammer"], name, "Common"))
         elif "Frame" in trait_d and trait_d["Frame"] == "Duo":
