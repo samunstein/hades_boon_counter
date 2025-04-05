@@ -115,7 +115,9 @@ def read_traits(data, lang):
             gods = gods_re.groups()
             trait_list.append(Trait(list(gods), name, "Duo"))
         elif "Icon" in trait_d and "Chaos_Blessing" in trait_d["Icon"]:
-            trait_list.append(Trait(["Chaos"], name, trait_d["Rarity"]))
+            all_d = list(trait.values())
+            for trait_d in all_d:
+                trait_list.append(Trait(["Chaos"], name, trait_d["Rarity"]))
         elif "Icon" in trait_d and "Rarity" in trait_d and re.match("Boon_([A-Za-z]+)_[0-9]+", trait_d["Icon"]):
             god_re = re.match("Boon_([A-Za-z]+)_[0-9]+", trait_d["Icon"])
             god = god_re.groups()
